@@ -27,33 +27,22 @@ namespace TTerm
                 EnvironmentVariables = env
             };
         }
-
-
     }
 
-    public interface IProfile
-    {
-        string Command { get; set; }
-        string[] Arguments { get; set; }
-        string CurrentWorkingDirectory { get; set; }
-        IDictionary<string, string> EnvironmentVariables { get; set; }
-    }
 
-    public class ExecutionProfile : IProfile
+    public class ExecutionProfile 
     {
-        [JsonProperty(PropertyName = "command")]
         public string Command { get; set; }
 
-        [JsonProperty(PropertyName = "args")]
         public string[] Arguments { get; set; }
 
-        [JsonProperty(PropertyName = "cwd")]
         public string CurrentWorkingDirectory { get; set; }
 
-        [JsonProperty(PropertyName = "env")]
         public IDictionary<string, string> EnvironmentVariables { get; set; }
 
-        public static ExecutionProfile CreateDefaultProfile()
+        public bool EscapeArguments { get; set; }
+
+        public static ExecutionProfile CreateDefaultShell()
         {
             return DefaultProfile.Get();
         }
@@ -61,8 +50,6 @@ namespace TTerm
 
     internal static class DefaultProfile
     {
-
-
         public static ExecutionProfile Get()
         {
             var profile = new ExecutionProfile()
@@ -84,6 +71,7 @@ namespace TTerm
             {
                 result = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
             }
+
             return result;
         }
 
@@ -99,6 +87,7 @@ namespace TTerm
             {
                 result = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             }
+
             return result;
         }
     }

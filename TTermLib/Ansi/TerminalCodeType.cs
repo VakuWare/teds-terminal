@@ -29,5 +29,7 @@
         SetMode,
         CharAttributes,
         ResetMode,
+
+        DummyCode
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
@@ -16,6 +17,9 @@ namespace TTerm.Ui
 {
     public class TerminalControl : Canvas
     {
+        private const int MinColumns = 58;
+        private const int MinRows = 4;
+        
         private const int UpdateTimerIntervalMs = 50;
         private const int UpdateTimerTriggerMs = 50;
         private const int UpdateTimerTriggerIntervalCount = 5;
@@ -43,6 +47,7 @@ namespace TTerm.Ui
         private int _updateAvailable;
 
         private int _focusTick;
+        private TerminalSize _terminalSize;
 
         public TerminalSession Session
         {
@@ -106,6 +111,8 @@ namespace TTerm.Ui
             get => _fontStretch;
         }
 
+        public bool AutoSizeTerminal { get; set; }
+
         private DpiScale Dpi => VisualTreeHelper.GetDpi(this);
 
         private bool IsSessionAvailable => _session != null;
@@ -149,6 +156,77 @@ namespace TTerm.Ui
                 Dispatcher);
             _updateTimer.Stop();
         }
+
+        public void Scroll(int offset)
+        {
+            Buffer.Scroll(offset);
+            UpdateContentForced();
+        }
+        public void ScrollTo(int absValue)
+        {
+            Buffer.WindowTop = absValue;
+            UpdateContentForced();
+        }
+        public void ScrollToCursor()
+        {
+            Buffer.ScrollToCursor();
+            UpdateContentForced();
+        }
+
+        #region Resize
+
+        private TerminalSize GetBufferSizeForWindowSize(Size size)
+        {
+            Size charSize = CharSize;
+            Size newConsoleSize = new Size(Math.Max(size.Width, 0),
+                Math.Max(size.Height, 0));
+
+            int columns = (int)Math.Floor(newConsoleSize.Width / charSize.Width);
+            int rows = (int)Math.Floor(newConsoleSize.Height / charSize.Height);
+
+            columns = Math.Max(columns, MinColumns);
+            rows = Math.Max(rows, MinRows);
+
+            return new TerminalSize(columns, rows);
+        }
+
+        private void SetTermialSize(TerminalSize size)
+        {
+            if (_terminalSize != size)
+            {
+                _terminalSize = size;
+                if (_session != null)
+                {
+                    _session.Size = size;
+                }
+
+                // if (Ready)
+                // {
+                //     // Save configuration
+                //     // _configService.Config.Columns = size.Columns;
+                //     // _configService.Config.Rows = size.Rows;
+                //     // _configService.Save();
+                //
+                //     // Update hint overlay
+                //     resizeHint.Hint = size;
+                //     resizeHint.IsShowing = true;
+                //     resizeHint.IsShowing = IsResizing;
+                // }
+            }
+        }
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            if (AutoSizeTerminal)
+            {
+                var size = GetBufferSizeForWindowSize(sizeInfo.NewSize);
+                SetTermialSize(size);
+                UpdateContentForced();
+            }
+            base.OnRenderSizeChanged(sizeInfo);
+        }
+
+
+        #endregion
 
         #region Layout
 
@@ -310,6 +388,13 @@ namespace TTerm.Ui
                 {
                     lineTags[y] = Buffer.GetFormattedLine(windowTop + y);
                 }
+
+                // if (!_session.Connected)
+                // {
+                //     var tags = ImmutableArray.CreateBuilder<TerminalTag>(Buffer.Size.Columns);
+                //     tags.Add(new TerminalTag("DEAD PROCESS", new CharAttributes()));
+                //     lineTags[lineCount-1] = new TerminalTagArray(tags.ToImmutable());
+                // }
 
                 Dispatcher.InvokeAsync(() =>
                 {

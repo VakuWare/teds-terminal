@@ -14,7 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Ansi\CharAttributes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Ansi\TerminalCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Ansi\TerminalCodeType.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Ansi\WinPty.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WinPty.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EnvironmentVariableHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)EnvironmentVariables.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\ArraySegmentExtensions.cs" />
@@ -22,7 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EnumerableExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ForkData.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Native\Win32.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Profile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ExecutionProfile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\SelectionMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalBufferChar.cs" />
@@ -55,10 +55,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="$(MSBuildThisFileDirectory)Ui\ResizeHint.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Ui\Styles.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -9,7 +9,7 @@ using TTerm.Terminal;
 using static TTerm.Native.Win32;
 using static winpty.WinPty;
 
-namespace TTerm.Ansi
+namespace TTerm
 {
     internal class WinPty : IDisposable
     {
@@ -32,7 +32,7 @@ namespace TTerm.Ansi
             }
         }
 
-        public WinPty(Profile profile, TerminalSize size, bool separateStdErr = false)
+        public WinPty(ExecutionProfile executionProfile, TerminalSize size, bool separateStdErr = false)
         {
             _size = size;
 
@@ -46,6 +46,7 @@ namespace TTerm.Ansi
                 {
                     cfgFlags |= WINPTY_FLAG_CONERR;
                 }
+
                 cfg = winpty_config_new(cfgFlags, out err);
                 winpty_config_set_initial_size(cfg, size.Columns, size.Rows);
 
@@ -56,12 +57,17 @@ namespace TTerm.Ansi
                 }
 
                 string cmdline = null;
-                string env = GetEnvironmentString(profile.EnvironmentVariables);
-                if (profile.Arguments != null && profile.Arguments.Length > 0)
+                string env = GetEnvironmentString(executionProfile.EnvironmentVariables);
+                if (executionProfile.Arguments != null && executionProfile.Arguments.Length > 0)
                 {
-                    cmdline = string.Join(" ", profile.Arguments.Select(x => $"\"{x}\""));
+                    cmdline = executionProfile.EscapeArguments
+                        ? string.Join(" ", executionProfile.Arguments.Select(x => $"\"{x}\""))
+                        : string.Join(" ", executionProfile.Arguments);
                 }
-                spawnCfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, profile.Command, cmdline, profile.CurrentWorkingDirectory, env, out err);
+
+                cmdline = $"{executionProfile.Command} {cmdline}";
+                spawnCfg = winpty_spawn_config_new(WINPTY_SPAWN_FLAG_AUTO_SHUTDOWN, executionProfile.Command, cmdline,
+                    executionProfile.CurrentWorkingDirectory, env, out err);
                 if (err != IntPtr.Zero)
                 {
                     throw new WinPtrException(err);
@@ -123,6 +129,7 @@ namespace TTerm.Ansi
                 {
                     serverName = pipeName.Substring(2, slash3 - 2);
                 }
+
                 int slash4 = pipeName.IndexOf('\\', slash3 + 1);
                 if (slash4 != -1)
                 {
@@ -147,6 +154,7 @@ namespace TTerm.Ansi
             {
                 sb.AppendFormat("{0}={1}\0", kvp.Key, kvp.Value);
             }
+
             sb.Append('\0');
             return sb.ToString();
         }
@@ -166,6 +174,7 @@ namespace TTerm.Ansi
                         {
                             throw new WinPtrException(err);
                         }
+
                         _size = value;
                     }
                     finally

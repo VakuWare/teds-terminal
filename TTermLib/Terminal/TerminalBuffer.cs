@@ -10,11 +10,16 @@ namespace TTerm.Terminal
 {
     public class TerminalBuffer
     {
-        private const int MaxHistorySize = 1024;
+        private readonly TerminalSession _terminalSession;
+
+        public int HistoryBufferSize { get; }
 
         private TerminalBufferChar[] _buffer;
         private TerminalSize _size;
         private readonly List<TerminalBufferLine> _history = new List<TerminalBufferLine>();
+        private int _windowTop;
+
+        public int HistoryLength => _history.Count;
 
         public bool ShowCursor { get; set; }
         public int CursorX { get; set; }
@@ -22,7 +27,24 @@ namespace TTerm.Terminal
         public CharAttributes CurrentCharAttributes { get; set; }
         public TerminalSelection Selection { get; set; }
 
-        public int WindowTop { get; set; }
+        public int WindowTop
+        {
+            get => _windowTop;
+            set
+            {
+                if (_windowTop != value)
+                {
+                    if (_terminalSession.LimitViewport)
+                    {
+                        if (value > 0)
+                            value = 0;
+                    }
+                    _windowTop = value;
+                    _terminalSession.FireViewportChanged();
+                }
+            }
+        }
+
         public int WindowBottom
         {
             get => WindowTop + _size.Rows - 1;
@@ -32,8 +54,10 @@ namespace TTerm.Terminal
             }
         }
 
-        public TerminalBuffer(TerminalSize size)
+        public TerminalBuffer(TerminalSession terminalSession, TerminalSize size, int bufferSize = 1024)
         {
+            _terminalSession = terminalSession;
+            HistoryBufferSize = bufferSize;
             Initialise(size);
         }
 
@@ -76,6 +100,8 @@ namespace TTerm.Terminal
                 }
             }
         }
+
+        public void ClearHistory() => _history.Clear();
 
         public void Clear()
         {
@@ -427,7 +453,7 @@ namespace TTerm.Terminal
 
         private void AddHistory(TerminalBufferLine line)
         {
-            if (_history.Count >= MaxHistorySize)
+            if (_history.Count >= HistoryBufferSize)
             {
                 _history.RemoveAt(0);
             }

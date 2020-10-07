@@ -26,7 +26,7 @@ namespace TTerm.Ui
         private TerminalSessionManager _sessionMgr = new TerminalSessionManager();
         private TerminalSession _currentSession;
         private TerminalSize _terminalSize;
-        private Profile _defaultProfile;
+        private ExecutionProfile _defaultExecutionProfile;
 
         public bool Ready
         {
@@ -60,7 +60,7 @@ namespace TTerm.Ui
 
         private void NewSessionTab_Click(object sender, EventArgs e)
         {
-            CreateSession(_defaultProfile);
+            CreateSession(_defaultExecutionProfile);
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -74,26 +74,26 @@ namespace TTerm.Ui
             // _terminalSize = new TerminalSize(columns, rows);
             // FixWindowSize();
             //
-            // Profile profile = config.Profile;
-            // if (profile == null)
+            // ExecutionProfile executionProfile = config.ExecutionProfile;
+            // if (executionProfile == null)
             // {
-            //     profile = DefaultProfile.Get();
+            //     executionProfile = DefaultProfile.Get();
             // }
-            // _defaultProfile = profile.ExpandVariables();
-            // CreateSession(_defaultProfile);
+            // _defaultExecutionProfile = executionProfile.ExpandVariables();
+            // CreateSession(_defaultExecutionProfile);
         }
 
         protected override void OnForked(ForkData data)
         {
-            Profile profile = _defaultProfile;
-            profile.CurrentWorkingDirectory = data.CurrentWorkingDirectory;
-            profile.EnvironmentVariables = data.Environment;
-            CreateSession(profile);
+            ExecutionProfile executionProfile = _defaultExecutionProfile;
+            executionProfile.CurrentWorkingDirectory = data.CurrentWorkingDirectory;
+            executionProfile.EnvironmentVariables = data.Environment;
+            CreateSession(executionProfile);
         }
 
-        private void CreateSession(Profile profile)
+        private void CreateSession(ExecutionProfile executionProfile)
         {
-            var session = _sessionMgr.CreateSession(_terminalSize, profile);
+            var session = _sessionMgr.CreateSession(_terminalSize, executionProfile);
             // session.TitleChanged += OnSessionTitleChanged;
             session.Finished += OnSessionFinished;
 
@@ -326,7 +326,7 @@ namespace TTerm.Ui
                         }
                     case Key.T:
                         {
-                            CreateSession(_defaultProfile);
+                            CreateSession(_defaultExecutionProfile);
                             e.Handled = true;
                             break;
                         }

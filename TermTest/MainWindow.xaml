@@ -34,7 +34,16 @@
         </StackPanel>
     </hc:Window.NonClientAreaContent>
     <Grid>
-        <ui1:TerminalControl  x:Name="terminalControl" PreviewMouseWheel="TerminalControl_OnPreviewMouseWheel"></ui1:TerminalControl>
-        <ui1:ResizeHint x:Name="resizeHint" />
+        <StackPanel>
+            <TextBlock Text="asdf" x:Name="Debug"></TextBlock>
+            <TextBlock Text="asdf" x:Name="Debug1"></TextBlock>
+            <TextBlock Text="asdf" x:Name="Debug2"></TextBlock>
+            <Slider x:Name="Slider" Minimum="0" Maximum="1124" Value="20"></Slider>
+        </StackPanel>
+
+        <Button x:Name="Button1" Content="+" Margin="115,194,625,195" Width="52"/>
+        <Button x:Name="Button2" Content="-" Margin="115,229,625,164" Width="52" Height="26"/>
+        <ui1:TerminalControl  FontSize="16" x:Name="terminalControl" PreviewMouseWheel="TerminalControl_OnPreviewMouseWheel" Margin="208,80,36,25"></ui1:TerminalControl>
+        <ui1:ResizeHint x:Name="resizeHint" Height="90" VerticalAlignment="Bottom" Margin="591,0,36,319" />
     </Grid>
 </hc:Window>

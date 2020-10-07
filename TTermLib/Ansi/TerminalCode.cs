@@ -8,6 +8,10 @@ namespace TTerm.Ansi
 {
     internal struct TerminalCode
     {
+        public static TerminalCode EraseLine = new TerminalCode(TerminalCodeType.EraseInLine);
+        public static TerminalCode Cr = new TerminalCode(TerminalCodeType.CarriageReturn);
+        public static TerminalCode Dummy = new TerminalCode(TerminalCodeType.DummyCode);
+
         public TerminalCodeType Type { get; }
         public int Line { get; }
         public int Column { get; }

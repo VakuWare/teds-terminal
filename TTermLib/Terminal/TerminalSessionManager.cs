@@ -16,20 +16,20 @@ namespace TTerm.Terminal
             get => new ReadOnlyCollection<TerminalSession>(_sessions);
         }
 
-        public TerminalSession CreateSession(TerminalSize size, Profile profile)
+        public TerminalSession CreateSession(TerminalSize size, ExecutionProfile executionProfile)
         {
-            PrepareTTermEnvironment(profile);
+            PrepareTTermEnvironment(executionProfile);
 
-            var session = new TerminalSession(size, profile);
+            var session = new TerminalSession(size, executionProfile);
             session.Finished += OnSessionFinished;
 
             _sessions.Add(session);
             return session;
         }
 
-        private void PrepareTTermEnvironment(Profile profile)
+        private void PrepareTTermEnvironment(ExecutionProfile executionProfile)
         {
-            var env = profile.EnvironmentVariables;
+            var env = executionProfile.EnvironmentVariables;
 
             // Force our own environment variable so shells know we are in a tterm session
             int pid = Process.GetCurrentProcess().Id;
