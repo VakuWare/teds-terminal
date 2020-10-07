@@ -29,7 +29,8 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <NuGetPackageImportStamp />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -89,8 +90,8 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
-    <Reference Include="winpty.NET">
-      <HintPath>..\..\packages\winpty.NET.0.4.2\lib\net40\winpty.NET.dll</HintPath>
+    <Reference Include="winpty.NET, Version=0.4.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\AvalonStudio.winpty.NET.0.4.6\lib\netstandard2.0\winpty.NET.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -210,26 +211,6 @@
   <ItemGroup>
     <Resource Include="..\..\tterm.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="winpty\x64\winpty-agent.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="winpty\x64\winpty-debugserver.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="winpty\x64\winpty.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="winpty\x86\winpty-agent.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="winpty\x86\winpty-debugserver.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="winpty\x86\winpty.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -237,5 +218,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
+    <Error Condition="!Exists('..\..\packages\AvalonStudio.winpty.NET.0.4.6\build\AvalonStudio.winpty.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\AvalonStudio.winpty.NET.0.4.6\build\AvalonStudio.winpty.NET.targets'))" />
   </Target>
+  <Import Project="..\..\packages\AvalonStudio.winpty.NET.0.4.6\build\AvalonStudio.winpty.NET.targets" Condition="Exists('..\..\packages\AvalonStudio.winpty.NET.0.4.6\build\AvalonStudio.winpty.NET.targets')" />
 </Project>

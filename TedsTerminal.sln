@@ -13,6 +13,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TTermLib", "TTermLib\TTermL
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scratch", "Scratch", "{72BF1178-E786-45F0-86A1-2C1440BEDE65}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tterm", "src\tterm\tterm.csproj", "{8BF6C7C8-2B7A-4833-9AB7-6C3E39ACD776}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		TTermLib\TTermLib.projitems*{43546f03-0483-4441-b222-b5767d40acba}*SharedItemsImports = 5
@@ -36,12 +38,17 @@ Global
 		{5D5C5FF5-B740-4234-B347-54CA1E54B87F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5D5C5FF5-B740-4234-B347-54CA1E54B87F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5D5C5FF5-B740-4234-B347-54CA1E54B87F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BF6C7C8-2B7A-4833-9AB7-6C3E39ACD776}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BF6C7C8-2B7A-4833-9AB7-6C3E39ACD776}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BF6C7C8-2B7A-4833-9AB7-6C3E39ACD776}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BF6C7C8-2B7A-4833-9AB7-6C3E39ACD776}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{296E0547-4964-4316-B271-0A47EEEE1CA0} = {72BF1178-E786-45F0-86A1-2C1440BEDE65}
+		{8BF6C7C8-2B7A-4833-9AB7-6C3E39ACD776} = {72BF1178-E786-45F0-86A1-2C1440BEDE65}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E023A59-67B0-456B-8A4D-7DB6B5CC511A}

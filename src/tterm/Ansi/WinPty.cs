@@ -23,8 +23,7 @@ namespace tterm.Ansi
 
         static WinPty()
         {
-            string platform = Environment.Is64BitProcess ? "x64" : "x86";
-            string libPath = String.Format(@"winpty\{0}\winpty.dll", platform);
+            string libPath = @"winpty.dll";
             IntPtr winptyHandle = LoadLibrary(libPath);
             if (winptyHandle == IntPtr.Zero)
             {

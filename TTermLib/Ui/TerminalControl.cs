@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using TTerm.Ansi;
 using TTerm.Terminal;
-using SelectionMode = TTerm.Terminal.SelectionMode;
+using TerminalSelectionMode = TTerm.Terminal.SelectionMode;
 
 namespace TTerm.Ui
 {
@@ -347,10 +347,10 @@ namespace TTerm.Ui
 
         private void StartSelectionAt(TerminalPoint startPoint)
         {
-            var mode = System.Windows.Controls.SelectionMode.Stream;
+            var mode = TerminalSelectionMode.Stream;
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
             {
-                mode = System.Windows.Controls.SelectionMode.Block;
+                mode = TerminalSelectionMode.Block;
             }
             Buffer.Selection = new TerminalSelection(mode, startPoint, startPoint);
             UpdateContentForced();
@@ -360,10 +360,10 @@ namespace TTerm.Ui
         {
             if (Buffer.Selection != null)
             {
-                var mode = System.Windows.Controls.SelectionMode.Stream;
+                var mode = TerminalSelectionMode.Stream;
                 if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
                 {
-                    mode = System.Windows.Controls.SelectionMode.Block;
+                    mode = TerminalSelectionMode.Block;
                 }
                 var startPoint = Buffer.Selection.Start;
                 Buffer.Selection = new TerminalSelection(mode, startPoint, endPoint);
