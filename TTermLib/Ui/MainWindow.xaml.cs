@@ -116,7 +116,7 @@ namespace TTerm.Ui
                 if (session != null)
                 {
                     session.Active = true;
-                    session.Size = _terminalSize;
+                    session.Buffer.Size = _terminalSize;
                 }
 
                 terminalControl.Session = session;
@@ -271,7 +271,7 @@ namespace TTerm.Ui
                 _terminalSize = size;
                 if (_currentSession != null)
                 {
-                    _currentSession.Size = size;
+                    _currentSession.Buffer.Size = size;
                 }
 
                 if (Ready)

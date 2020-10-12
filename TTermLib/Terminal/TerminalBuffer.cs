@@ -10,7 +10,8 @@ namespace TTerm.Terminal
 {
     public class TerminalBuffer
     {
-        private readonly TerminalSession _terminalSession;
+        public event EventHandler BufferSizeChanged;
+        public event EventHandler ViewportChanged;
 
         public int HistoryBufferSize { get; }
 
@@ -18,14 +19,17 @@ namespace TTerm.Terminal
         private TerminalSize _size;
         private readonly List<TerminalBufferLine> _history = new List<TerminalBufferLine>();
         private int _windowTop;
+        private TerminalSession _attachedSession;
 
         public int HistoryLength => _history.Count;
 
+        public bool LimitViewport { get; set; }
         public bool ShowCursor { get; set; }
         public int CursorX { get; set; }
         public int CursorY { get; set; }
         public CharAttributes CurrentCharAttributes { get; set; }
         public TerminalSelection Selection { get; set; }
+
 
         public int WindowTop
         {
@@ -34,13 +38,13 @@ namespace TTerm.Terminal
             {
                 if (_windowTop != value)
                 {
-                    if (_terminalSession.LimitViewport)
+                    if (LimitViewport && value > 0)
                     {
-                        if (value > 0)
-                            value = 0;
+                        value = 0;
                     }
+
                     _windowTop = value;
-                    _terminalSession.FireViewportChanged();
+                    ViewportChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
@@ -48,17 +52,37 @@ namespace TTerm.Terminal
         public int WindowBottom
         {
             get => WindowTop + _size.Rows - 1;
-            set
-            {
-                WindowTop = value - _size.Rows + 1;
-            }
+            set { WindowTop = value - _size.Rows + 1; }
         }
 
-        public TerminalBuffer(TerminalSession terminalSession, TerminalSize size, int bufferSize = 1024)
+        public TerminalBuffer(TerminalSize size, int bufferSize = 1024)
         {
-            _terminalSession = terminalSession;
             HistoryBufferSize = bufferSize;
             Initialise(size);
+        }
+
+
+        internal void PreviewSessionCleanup()
+        {
+            for (int y = 0; y < Math.Min(CursorY, Size.Rows); y++)
+            {
+                AddHistory(GetBufferLine(y));
+            }
+
+            _attachedSession = null;
+            // CursorX = 0;
+            // CursorY = 0;
+            // Clear();
+        }
+
+        internal TerminalBuffer AttachToSession(TerminalSession session)
+        {
+            if (_attachedSession != null)
+                throw new InvalidOperationException("Cannot attach to multiple sessions");
+
+            _attachedSession = session;
+
+            return this;
         }
 
         private void Initialise(TerminalSize size)
@@ -91,12 +115,15 @@ namespace TTerm.Terminal
                     int dstTop = 0;
 
                     CopyBufferToBuffer(srcBuffer, srcSize, srcLeft, srcTop, srcRight, srcBottom,
-                                       dstBuffer, dstSize, dstLeft, dstTop);
+                        dstBuffer, dstSize, dstLeft, dstTop);
 
                     _buffer = dstBuffer;
                     _size = dstSize;
 
                     CursorY = Math.Min(CursorY, _size.Rows - 1);
+
+                    _attachedSession?.PreviewBufferSizeChange(value);
+                    BufferSizeChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
@@ -123,6 +150,7 @@ namespace TTerm.Terminal
                     _buffer[index] = new TerminalBufferChar(' ', default(CharAttributes));
                 }
             }
+
             ScrollToCursor();
         }
 
@@ -134,6 +162,7 @@ namespace TTerm.Terminal
                 _buffer[index] = new TerminalBufferChar(c, CurrentCharAttributes);
                 CursorX++;
             }
+
             ScrollToCursor();
         }
 
@@ -148,6 +177,7 @@ namespace TTerm.Terminal
                     CursorX++;
                 }
             }
+
             ScrollToCursor();
         }
 
@@ -176,6 +206,7 @@ namespace TTerm.Terminal
             {
                 result[i] = GetText(left, top + i, width);
             }
+
             return result;
         }
 
@@ -204,6 +235,7 @@ namespace TTerm.Terminal
             {
                 chars[i] = buffer[index + i].Char;
             }
+
             string line = new string(chars);
             return line;
         }
@@ -223,12 +255,15 @@ namespace TTerm.Terminal
                     {
                         x0 = start.Column;
                     }
+
                     if (y == end.Row)
                     {
                         x1 = end.Column;
                     }
+
                     result.Add(GetText(x0, y, x1 - x0 + 1));
                 }
+
                 return result.ToArray();
             }
             else if (selection.Mode == SelectionMode.Block)
@@ -352,6 +387,7 @@ namespace TTerm.Terminal
             {
                 attr.BackgroundColour = SpecialColourIds.Futuristic;
             }
+
             return attr;
         }
 
@@ -364,6 +400,7 @@ namespace TTerm.Terminal
                 {
                     return (null, 0, 0);
                 }
+
                 var historyLine = _history[historyIndex];
                 var buffer = historyLine.Buffer;
                 return (buffer, 0, Math.Min(buffer.Length, _size.Columns));
@@ -374,6 +411,7 @@ namespace TTerm.Terminal
                 {
                     return (null, 0, 0);
                 }
+
                 int startIndex = GetBufferIndex(0, y);
                 return (_buffer, startIndex, startIndex + _size.Columns);
             }
@@ -396,6 +434,7 @@ namespace TTerm.Terminal
                         return false;
                     }
                 }
+
                 if (y == end.Row)
                 {
                     if (x > end.Column)
@@ -403,10 +442,12 @@ namespace TTerm.Terminal
                         return false;
                     }
                 }
+
                 if (y < start.Row || y > end.Row)
                 {
                     return false;
                 }
+
                 return true;
             }
             else if (selection.Mode == SelectionMode.Block)
@@ -457,6 +498,7 @@ namespace TTerm.Terminal
             {
                 _history.RemoveAt(0);
             }
+
             _history.Add(line);
         }
 
@@ -483,8 +525,9 @@ namespace TTerm.Terminal
             }
         }
 
-        private static void CopyBufferToBuffer(TerminalBufferChar[] srcBuffer, TerminalSize srcSize, int srcLeft, int srcTop, int srcRight, int srcBottom,
-                                               TerminalBufferChar[] dstBuffer, TerminalSize dstSize, int dstLeft, int dstTop)
+        private static void CopyBufferToBuffer(TerminalBufferChar[] srcBuffer, TerminalSize srcSize, int srcLeft,
+            int srcTop, int srcRight, int srcBottom,
+            TerminalBufferChar[] dstBuffer, TerminalSize dstSize, int dstLeft, int dstTop)
         {
             int cols = srcRight - srcLeft + 1;
             int rows = srcBottom - srcTop + 1;

@@ -12,11 +12,6 @@ namespace TermTest
 {
     public partial class MainWindow
     {
-        class Infos
-        {
-            public object D1  { get; set; }
-        }
-
         public MainWindow()
         {
             InitializeComponent();
@@ -24,10 +19,16 @@ namespace TermTest
             var size = new TerminalSize(80, 24);
 
             var profile = ExecutionProfile.CreateDefaultShell().ExpandVariables();
+            // var profile = new ExecutionProfile()
+            // {
+            //     Arguments = new[] {"-Sy"}, Command = @"c:\SN\tools\msys\usr\bin\pacman.exe",
+            //     CurrentWorkingDirectory = @"c:\SN\tools\msys\usr\bin"
+            // };
+            var b = new TerminalBuffer(size);
 
-            this.DataContext = new Infos();
+            terminalControl.AutoSizeTerminal = true;
 
-            terminalControl.Session = new TerminalSession(size, profile);
+            // terminalControl.Session = new TerminalSession(b, profile);
             // terminalControl.Session = new TerminalSession(size, new ExecutionProfile()
             // {
             //     Arguments = new []{ "-h" }, Command = @"c:\SN\tools\msys\usr\bin\pacman.exe", CurrentWorkingDirectory = @"c:\SN\tools\msys\usr\bin"
@@ -38,24 +39,37 @@ namespace TermTest
             // var stream = client.GetStream();
             // terminalControl.Session = new TerminalSession(size, stream, stream);
             // terminalControl.Session.ImplicitCrForLf = true;
+            // terminalControl.Session.Connect();
 
+            int x = 5;
 
-            terminalControl.Session.Connect();
-
-            terminalControl.Session.Finished += (sender, args) =>
+            void OnSessionOnFinished(object sender, EventArgs args)
             {
-                terminalControl.Session.Dispose();
-                terminalControl.Session = terminalControl.Session = new TerminalSession(size, profile);
-                terminalControl.Session.Connect();
-            };
+                if (terminalControl.Session != null)
+                {
+                    terminalControl.Session.Finished -= OnSessionOnFinished;
+                    terminalControl.Session.Dispose();
+                }
 
+                if (x-- > 0)
+                    CreatePermaSession();
+            }
+
+            void CreatePermaSession()
+            {
+                terminalControl.Session = new TerminalSession(b, profile);
+                terminalControl.Session.Finished += OnSessionOnFinished;
+                terminalControl.Session.Connect();
+            }
+
+            CreatePermaSession();
             bool allowSlider = true;
 
-            terminalControl.Session.ViewportChanged += (sender, args) =>
+            terminalControl.Buffer.ViewportChanged += (sender, args) =>
             {
                 Dispatcher.Invoke(() =>
                 {
-                    var buffer = terminalControl.Session.Buffer;
+                    var buffer = terminalControl.Buffer;
                     if (allowSlider)
                     {
                         allowSlider = false;
@@ -63,37 +77,30 @@ namespace TermTest
                         Slider.Minimum = -terminalControl.Buffer.CursorY;
                         Slider.Maximum = buffer.HistoryLength;
                         var value = -buffer.WindowTop;
-                        if (value < Slider.Minimum) value = (int)Slider.Minimum;
-                        if (value > Slider.Maximum) value = (int)Slider.Maximum;
+                        if (value < Slider.Minimum) value = (int) Slider.Minimum;
+                        if (value > Slider.Maximum) value = (int) Slider.Maximum;
                         Slider.Value = value;
 
                         allowSlider = true;
                     }
-                   
 
-                    
+
                     Debug.Text = buffer.WindowTop.ToString();
                     Debug1.Text = Slider.Minimum.ToString();
                     Debug2.Text = Slider.Maximum.ToString();
                 });
             };
 
-            Button1.Click += (sender, args) =>
-            {
-                terminalControl.Scroll(1);
-            };
+            Button1.Click += (sender, args) => { terminalControl.Scroll(1); };
 
-            Button2.Click += (sender, args) =>
-            {
-                terminalControl.Scroll(-1);
-            };
+            Button2.Click += (sender, args) => { terminalControl.Scroll(-1); };
 
             Slider.ValueChanged += (sender, args) =>
             {
                 if (allowSlider)
                 {
                     allowSlider = false;
-                    terminalControl.ScrollTo(-(int)args.NewValue); 
+                    terminalControl.ScrollTo(-(int) args.NewValue);
                     allowSlider = true;
                 }
             };
@@ -114,9 +121,7 @@ namespace TermTest
 
                     // Debug1.Text = Slider.Maximum.ToString();
                     // Debug2.Text = terminalControl.Buffer.WindowTop.ToString();
-
                 });
-
             };
         }
 

@@ -28,6 +28,7 @@ namespace TTerm.Ui
         private readonly List<TerminalControlLine> _lines = new List<TerminalControlLine>();
 
         private TerminalSession _session;
+        private TerminalBuffer _buffer;
 
         private FontFamily _fontFamily;
         private double _fontSize;
@@ -49,6 +50,34 @@ namespace TTerm.Ui
         private int _focusTick;
         private TerminalSize _terminalSize;
 
+        public TerminalBuffer Buffer
+        {
+            get => _buffer;
+            set
+            {
+                if (_buffer != value)
+                {
+                    if (_buffer != null)
+                    {
+                        _buffer.BufferSizeChanged -= OnBufferSizeChanged;
+                    }
+                    _buffer = value;
+                    if (value != null)
+                    {
+                        if (_terminalSize == default)
+                            _terminalSize = _buffer.Size;
+
+                        if (_buffer.Size != _terminalSize)
+                            _buffer.Size = _terminalSize;
+
+                        _buffer.BufferSizeChanged += OnBufferSizeChanged;
+                    }
+
+                    UpdateContent();
+                }
+            }
+        }
+
         public TerminalSession Session
         {
             get => _session;
@@ -59,20 +88,23 @@ namespace TTerm.Ui
                     if (_session != null)
                     {
                         _session.OutputReceived -= OnOutputReceived;
-                        _session.BufferSizeChanged -= OnBufferSizeChanged;
                     }
+
                     _session = value;
+                    
                     if (value != null)
                     {
                         _session.OutputReceived += OnOutputReceived;
-                        _session.BufferSizeChanged += OnBufferSizeChanged;
+
+                        Buffer = _session.Buffer;
                     }
+
+                    FitToScreen();
                     UpdateContent();
                 }
             }
         }
 
-        public TerminalBuffer Buffer => _session?.Buffer;
 
         public FontFamily FontFamily
         {
@@ -190,14 +222,14 @@ namespace TTerm.Ui
             return new TerminalSize(columns, rows);
         }
 
-        private void SetTermialSize(TerminalSize size)
+        private void SetTerminalSize(TerminalSize size)
         {
             if (_terminalSize != size)
             {
                 _terminalSize = size;
-                if (_session != null)
+                if (Buffer != null)
                 {
-                    _session.Size = size;
+                    Buffer.Size = size;
                 }
 
                 // if (Ready)
@@ -216,13 +248,18 @@ namespace TTerm.Ui
         }
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
+            FitToScreen();
+            base.OnRenderSizeChanged(sizeInfo);
+        }
+
+        public void FitToScreen()
+        {
             if (AutoSizeTerminal)
             {
-                var size = GetBufferSizeForWindowSize(sizeInfo.NewSize);
-                SetTermialSize(size);
+                var size = GetBufferSizeForWindowSize(RenderSize);
+                SetTerminalSize(size);
                 UpdateContentForced();
             }
-            base.OnRenderSizeChanged(sizeInfo);
         }
 
 
@@ -532,7 +569,7 @@ namespace TTerm.Ui
 
         protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
         {
-            if (Keyboard.Modifiers == ModifierKeys.None)
+            if (Keyboard.Modifiers == ModifierKeys.None && Buffer != null)
             {
                 double delta = -e.Delta / 40.0;
                 int offset = (int)delta;

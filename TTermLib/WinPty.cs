@@ -1,17 +1,125 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
+using TTerm.Native;
 using TTerm.Terminal;
 using static TTerm.Native.Win32;
 using static winpty.WinPty;
+using static TTerm.ThrowHelper;
 
 namespace TTerm
 {
-    internal class WinPty : IDisposable
+    internal interface IPty : IDisposable
+    {
+        Stream StandardInput { get; }
+        Stream StandardOutput { get; }
+        Stream StandardError { get; }
+        TerminalSize Size { get; set; }
+    }
+
+    internal static class ThrowHelper
+    {
+        public static int W32Throw(int code, string message = null)
+        {
+            if (code == 0)
+                return 0;
+
+            var msg = new Win32Exception(Marshal.GetLastWin32Error()).Message;
+            throw new InvalidOperationException(
+                $"Win32 stuff failed with return code {code}: {msg} - {message}");
+        }
+
+
+        public static bool W32Throw(bool code)
+        {
+            if (code)
+                return true;
+
+            var msg = new Win32Exception(Marshal.GetLastWin32Error()).Message;
+            throw new InvalidOperationException(
+                $"Win32 stuff failed with return code {code}: {msg}");
+        }
+    }
+
+
+    internal class NativePty : IPty
+    {
+        private bool _isDisposed = false;
+        private SafeFileHandle _writeHandle;
+        private SafeFileHandle _readHandle;
+        private IntPtr _ptyHandle;
+
+        public NativePty(ExecutionProfile executionProfile, TerminalSize size)
+        {
+            SafeFileHandle stdin;
+            SafeFileHandle stdout;
+
+            CreatePipe(out stdin, out _writeHandle, IntPtr.Zero, 0);
+            CreatePipe(out _readHandle, out stdout, IntPtr.Zero, 0);
+
+            W32Throw(CreatePseudoConsole(new COORD {X = (short) size.Columns, Y = (short) size.Rows},
+                stdin, stdout, 0, out this._ptyHandle));
+            
+            var allocSize = IntPtr.Zero;
+            InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref allocSize);
+            if (allocSize == IntPtr.Zero)
+                W32Throw(0, "allocation granularity whatever.");
+
+            var startupInfo = new STARTUPINFOEX
+            {
+                StartupInfo = {cb = Marshal.SizeOf<STARTUPINFOEX>()},
+                lpAttributeList = Marshal.AllocHGlobal(allocSize)
+            };
+
+            W32Throw(InitializeProcThreadAttributeList(startupInfo.lpAttributeList, 1, 0, ref allocSize));
+
+            W32Throw(UpdateProcThreadAttribute(startupInfo.lpAttributeList, 0,
+                (IntPtr) PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE, _ptyHandle, (IntPtr) IntPtr.Size, IntPtr.Zero,
+                IntPtr.Zero));
+
+            var processSecurityAttr = new SECURITY_ATTRIBUTES();
+            var threadSecurityAttr = new SECURITY_ATTRIBUTES();
+            processSecurityAttr.nLength = threadSecurityAttr.nLength = Marshal.SizeOf<SECURITY_ATTRIBUTES>();
+
+            var args = executionProfile.Arguments ?? Array.Empty<string>();
+            var cmdline = executionProfile.EscapeArguments
+                ? string.Join(" ", args.Select(x => $"\"{x}\""))
+                : string.Join(" ", args);
+
+            W32Throw(CreateProcess(executionProfile.Command, cmdline, ref processSecurityAttr, ref threadSecurityAttr,
+                false, EXTENDED_STARTUPINFO_PRESENT, IntPtr.Zero, null, ref startupInfo, out var processInfo));
+
+            DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+            Marshal.FreeHGlobal(startupInfo.lpAttributeList);
+
+            StandardOutput = new FileStream(_readHandle, FileAccess.Read);
+            StandardInput = new FileStream(_writeHandle, FileAccess.Write);
+        }
+
+        public void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                _isDisposed = true;
+                _readHandle?.Dispose();
+                _writeHandle?.Dispose();
+                ClosePseudoConsole(_ptyHandle);
+            }
+        }
+
+        public Stream StandardInput { get; }
+        public Stream StandardOutput { get; }
+        public Stream StandardError { get; }
+        public TerminalSize Size { get; set; }
+    }
+
+    internal class WinPty : IPty
     {
         private bool _disposed;
         private IntPtr _handle;
@@ -111,6 +219,7 @@ namespace TTerm
                 StandardOutput?.Dispose();
                 StandardError?.Dispose();
                 winpty_free(_handle);
+                
 
                 StandardInput = null;
                 StandardOutput = null;

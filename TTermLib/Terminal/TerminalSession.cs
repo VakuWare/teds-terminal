@@ -9,9 +9,19 @@ using TTerm.Utility;
 
 namespace TTerm.Terminal
 {
+    public class TextEventArgs : EventArgs
+    {
+        public TextEventArgs()
+        {
+            Text = "";
+        }
+
+        public string Text { get; internal set; }
+    }
+
     public class TerminalSession : IDisposable
     {
-        private readonly WinPty _pty;
+        private readonly IPty _pty;
         private readonly Stream _ptyStdOut;
         private readonly StreamWriter _ptyWriter;
         private readonly object _bufferSync = new object();
@@ -19,9 +29,10 @@ namespace TTerm.Terminal
 
         public event EventHandler TitleChanged;
         public event EventHandler OutputReceived;
-        public event EventHandler BufferSizeChanged;
         public event EventHandler Finished;
-        public event EventHandler ViewportChanged;
+
+        private TextEventArgs _nextTextEventArgs = new TextEventArgs();
+        public event EventHandler<TextEventArgs> TextReceived;
 
         public bool ImplicitCrForLf { get; set; }
         public bool LimitViewport { get; set; } = true;
@@ -33,31 +44,21 @@ namespace TTerm.Terminal
 
         public TerminalBuffer Buffer { get; }
 
-        public TerminalSize Size
+        private TerminalSession(TerminalBuffer buffer)
         {
-            get => Buffer.Size;
-            set
-            {
-                if (Buffer.Size != value)
-                {
-                    _pty.Size = value;
-                    Buffer.Size = value;
-                    BufferSizeChanged?.Invoke(this, EventArgs.Empty);
-                }
-            }
+            Buffer = buffer.AttachToSession(this);
         }
 
-        public TerminalSession(TerminalSize size, Stream stdin, Stream stdout, int bufferSize = 1024)
+
+        public TerminalSession(TerminalBuffer buffer, Stream stdin, Stream stdout) : this(buffer)
         {
-            Buffer = new TerminalBuffer(this, size, bufferSize);
             _ptyWriter = new StreamWriter(stdin, Encoding.UTF8) {AutoFlush = true};
             _ptyStdOut = stdout;
         }
 
-        public TerminalSession(TerminalSize size, ExecutionProfile executionProfile, int bufferSize = 1024)
+        public TerminalSession(TerminalBuffer buffer, ExecutionProfile executionProfile) : this(buffer)
         {
-            Buffer = new TerminalBuffer(this, size, bufferSize);
-            _pty = new WinPty(executionProfile, size);
+            _pty = new WinPty(executionProfile, buffer.Size);
             _ptyWriter = new StreamWriter(_pty.StandardInput, Encoding.UTF8) {AutoFlush = true};
             _ptyStdOut = _pty.StandardOutput;
         }
@@ -78,11 +79,6 @@ namespace TTerm.Terminal
             }
         }
 
-        internal void FireViewportChanged()
-        {
-            ViewportChanged?.Invoke(this, EventArgs.Empty);
-        }
-
         private async void RunOutputLoop()
         {
             try
@@ -91,7 +87,7 @@ namespace TTerm.Terminal
             }
             catch (Exception ex)
             {
-                SessionErrored(ex);
+                SessionClosed(ex);
                 return;
             }
 
@@ -109,6 +105,7 @@ namespace TTerm.Terminal
                     int offset = 0;
                     var buffer = new char[1024];
                     int readChars = await sr.ReadAsync(buffer, offset, buffer.Length - offset);
+                    File.WriteAllText("dbg.txt", new string(buffer));
                     if (readChars > 0)
                     {
                         var reader = new ArrayReader<char>(buffer, 0, readChars);
@@ -156,12 +153,20 @@ namespace TTerm.Terminal
                     break;
                 case TerminalCodeType.Text:
                     Buffer.Type(code.Text);
+                    _nextTextEventArgs.Text += code.Text;
                     break;
                 case TerminalCodeType.LineFeed:
+
                     if (lastCode.Type != TerminalCodeType.CarriageReturn)
                     {
-                        ProcessTerminalCode(TerminalCode.EraseLine, TerminalCode.Dummy);
-                        ProcessTerminalCode(TerminalCode.Cr, TerminalCode.Dummy);
+                        TextReceived?.Invoke(this, _nextTextEventArgs);
+                        _nextTextEventArgs = new TextEventArgs();
+
+                        if (ImplicitCrForLf)
+                        {
+                            ProcessTerminalCode(TerminalCode.EraseLine, TerminalCode.Dummy);
+                            ProcessTerminalCode(TerminalCode.Cr, TerminalCode.Dummy);
+                        }
                     }
 
                     if (Buffer.CursorY == Buffer.Size.Rows - 1)
@@ -175,6 +180,8 @@ namespace TTerm.Terminal
 
                     break;
                 case TerminalCodeType.CarriageReturn:
+                    TextReceived?.Invoke(this, _nextTextEventArgs);
+                    _nextTextEventArgs = new TextEventArgs();
                     Buffer.CursorX = 0;
                     break;
                 case TerminalCodeType.CharAttributes:
@@ -224,19 +231,22 @@ namespace TTerm.Terminal
             }
         }
 
-        private void SessionErrored(Exception ex)
+
+        private void SessionClosed(Exception ex = null)
         {
             Connected = false;
+            _pty?.Dispose();
+
             Exception = ex;
+
+            Buffer.PreviewSessionCleanup();
             Finished?.Invoke(this, EventArgs.Empty);
         }
 
-        private void SessionClosed()
+        public void PreviewBufferSizeChange(in TerminalSize value)
         {
-            _pty?.Dispose();
-
-            Connected = false;
-            Finished?.Invoke(this, EventArgs.Empty);
+            if (_pty != null)
+                _pty.Size = value;
         }
     }
 }

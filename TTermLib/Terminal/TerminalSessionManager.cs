@@ -20,7 +20,8 @@ namespace TTerm.Terminal
         {
             PrepareTTermEnvironment(executionProfile);
 
-            var session = new TerminalSession(size, executionProfile);
+            var buffer = new TerminalBuffer(size);
+            var session = new TerminalSession(buffer, executionProfile);
             session.Finished += OnSessionFinished;
 
             _sessions.Add(session);

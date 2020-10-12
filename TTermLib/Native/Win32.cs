@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace TTerm.Native
 {
@@ -70,6 +71,25 @@ namespace TTerm.Native
         [DllImport("kernel32.dll")]
         public static extern IntPtr LoadLibrary(string path);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern int CreatePseudoConsole(COORD size, SafeFileHandle hInput, SafeFileHandle hOutput, uint dwFlags, out IntPtr phPC);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern int ResizePseudoConsole(IntPtr hPC, COORD size);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern int ClosePseudoConsole(IntPtr hPC);
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        internal static extern bool CreatePipe(out SafeFileHandle hReadPipe, out SafeFileHandle hWritePipe, IntPtr lpPipeAttributes, int nSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetExitCodeProcess(IntPtr hProcess, out uint lpExitCode);
+
         [DllImport("userenv.dll")]
         public static extern bool CreateEnvironmentBlock(out IntPtr lpEnvironment, IntPtr hToken, bool bInherit);
 
@@ -113,6 +133,12 @@ namespace TTerm.Native
             public bool bInheritHandle;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct COORD
+        {
+            public short X;
+            public short Y;
+        }
         public enum SECURITY_IMPERSONATION_LEVEL
         {
             SecurityAnonymous,
@@ -126,5 +152,102 @@ namespace TTerm.Native
             TokenPrimary = 1,
             TokenImpersonation
         }
+
+        internal const uint EXTENDED_STARTUPINFO_PRESENT = 0x00080000;
+        internal const uint PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE = 0x00020016;
+
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        internal struct STARTUPINFOEX
+        {
+            public STARTUPINFO StartupInfo;
+            public IntPtr lpAttributeList;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        internal struct STARTUPINFO
+        {
+            public Int32 cb;
+            public string lpReserved;
+            public string lpDesktop;
+            public string lpTitle;
+            public Int32 dwX;
+            public Int32 dwY;
+            public Int32 dwXSize;
+            public Int32 dwYSize;
+            public Int32 dwXCountChars;
+            public Int32 dwYCountChars;
+            public Int32 dwFillAttribute;
+            public Int32 dwFlags;
+            public Int16 wShowWindow;
+            public Int16 cbReserved2;
+            public IntPtr lpReserved2;
+            public IntPtr hStdInput;
+            public IntPtr hStdOutput;
+            public IntPtr hStdError;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct PROCESS_INFORMATION
+        {
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public int dwProcessId;
+            public int dwThreadId;
+        }
+
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool InitializeProcThreadAttributeList(IntPtr lpAttributeList, int dwAttributeCount, int dwFlags, ref IntPtr lpSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool UpdateProcThreadAttribute(IntPtr lpAttributeList, uint dwFlags, IntPtr attribute, IntPtr lpValue, IntPtr cbSize,
+                                                              IntPtr lpPreviousValue, IntPtr lpReturnSize);
+
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool CreateProcess(string lpApplicationName, string lpCommandLine, ref SECURITY_ATTRIBUTES lpProcessAttributes,
+                                                  ref SECURITY_ATTRIBUTES lpThreadAttributes, bool bInheritHandles, uint dwCreationFlags,
+                                                  IntPtr lpEnvironment, string lpCurrentDirectory, [In] ref STARTUPINFOEX lpStartupInfo,
+                                                  out PROCESS_INFORMATION lpProcessInformation);
+        [DllImport("kernel32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool TerminateProcess(IntPtr hProcess, uint exitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool DeleteProcThreadAttributeList(IntPtr lpAttributeList);
+
+
+        [Flags]
+        internal enum ConsoleInputModes : uint
+        {
+            ENABLE_PROCESSED_INPUT = 0x0001,
+            ENABLE_LINE_INPUT = 0x0002,
+            ENABLE_ECHO_INPUT = 0x0004,
+            ENABLE_WINDOW_INPUT = 0x0008,
+            ENABLE_MOUSE_INPUT = 0x0010,
+            ENABLE_INSERT_MODE = 0x0020,
+            ENABLE_QUICK_EDIT_MODE = 0x0040,
+            ENABLE_EXTENDED_FLAGS = 0x0080,
+            ENABLE_AUTO_POSITION = 0x0100
+        }
+
+        [Flags]
+        internal enum ConsoleOutputModes : uint
+        {
+            ENABLE_PROCESSED_OUTPUT = 0x0001,
+            ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002,
+            ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004,
+            DISABLE_NEWLINE_AUTO_RETURN = 0x0008,
+            ENABLE_LVB_GRID_WORLDWIDE = 0x0010
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
     }
 }
