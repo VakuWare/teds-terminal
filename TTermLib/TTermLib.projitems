@@ -14,15 +14,16 @@
     <Compile Include="$(MSBuildThisFileDirectory)Ansi\CharAttributes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Ansi\TerminalCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Ansi\TerminalCodeType.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)WinPty.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EnvironmentVariableHelper.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)EnvironmentVariables.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\TerminalSessionCmd.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\WinPty.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\EnvironmentVariableHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\EnvironmentVariables.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\ArraySegmentExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\DictionaryExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Extensions\EnumerableExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ForkData.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Native\Win32.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)ExecutionProfile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\Native\Win32.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\ExecutionProfile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\SelectionMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalBufferChar.cs" />
@@ -30,15 +31,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalPoint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalSelection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalSession.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalSessionManager.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalSize.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalTag.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Terminal\TerminalTagArray.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Ui\EnhancedWindow.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Ui\MainWindow.xaml.cs">
-      <SubType>Code</SubType>
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Ui\ResizeHint.xaml.cs">
       <DependentUpon>ResizeHint.xaml</DependentUpon>
     </Compile>
@@ -46,17 +41,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)Ui\TerminalColourHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Ui\TerminalControl.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Ui\TerminalControlLine.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UserUtility.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Cmd\UserUtility.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Utility\ArrayReader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="$(MSBuildThisFileDirectory)Ui\MainWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="$(MSBuildThisFileDirectory)Ui\ResizeHint.xaml">
-      <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
 </Project>

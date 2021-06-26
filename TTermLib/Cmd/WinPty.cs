@@ -15,7 +15,7 @@ using static TTerm.ThrowHelper;
 
 namespace TTerm
 {
-    internal interface IPty : IDisposable
+    public interface IPty : IDisposable
     {
         Stream StandardInput { get; }
         Stream StandardOutput { get; }
@@ -132,7 +132,7 @@ namespace TTerm
         static WinPty()
         {
             string platform = Environment.Is64BitProcess ? "x64" : "x86";
-            string libPath = @"winpty.dll";
+            string libPath = @"C:\Users\Malte\.nuget\packages\avalonstudio.winpty.net\0.4.6\runtimes\win7-x64\winpty.dll";
             IntPtr winptyHandle = LoadLibrary(libPath);
             if (winptyHandle == IntPtr.Zero)
             {

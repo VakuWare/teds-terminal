@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using TTerm;
 using TTerm.Terminal;
+using TTermLib.Cmd;
 using Timer = System.Timers.Timer;
 
 namespace TermTest
@@ -57,7 +58,7 @@ namespace TermTest
 
             void CreatePermaSession()
             {
-                terminalControl.Session = new TerminalSession(b, profile);
+                terminalControl.Session = new TerminalSessionCmd(b, profile);
                 terminalControl.Session.Finished += OnSessionOnFinished;
                 terminalControl.Session.Connect();
             }

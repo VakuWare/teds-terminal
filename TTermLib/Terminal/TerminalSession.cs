@@ -44,23 +44,17 @@ namespace TTerm.Terminal
 
         public TerminalBuffer Buffer { get; }
 
-        private TerminalSession(TerminalBuffer buffer)
+        public TerminalSession(TerminalBuffer buffer, IPty pty) 
+            : this(buffer, pty.StandardInput, pty.StandardOutput)
         {
-            Buffer = buffer.AttachToSession(this);
+            _pty = pty;
         }
 
-
-        public TerminalSession(TerminalBuffer buffer, Stream stdin, Stream stdout) : this(buffer)
+        public TerminalSession(TerminalBuffer buffer, Stream stdin, Stream stdout)
         {
-            _ptyWriter = new StreamWriter(stdin, Encoding.UTF8) {AutoFlush = true};
+            _ptyWriter = new StreamWriter(stdin, Encoding.UTF8) { AutoFlush = true };
             _ptyStdOut = stdout;
-        }
-
-        public TerminalSession(TerminalBuffer buffer, ExecutionProfile executionProfile) : this(buffer)
-        {
-            _pty = new WinPty(executionProfile, buffer.Size);
-            _ptyWriter = new StreamWriter(_pty.StandardInput, Encoding.UTF8) {AutoFlush = true};
-            _ptyStdOut = _pty.StandardOutput;
+            Buffer = buffer.AttachToSession(this);
         }
 
         public TerminalSession Connect()
