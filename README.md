@@ -1,8 +1,11 @@
 # Fork notes
+Sneusse's fork notes:
 
 Ted's Terminal is a nice base for a "Terminal-View" in WPF. This fork aims to deconstruct it into one or more WPF controls instead of a standalone tool. If you look for the standalone version go to the origin repo of this fork. 
 
 All credits go to Ted, I'm just deleting stuff.
+
+--> Same goes for me :)
 
 Original readme follows.
 
