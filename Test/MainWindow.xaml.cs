@@ -1,5 +1,9 @@
 ﻿using MahApps.Metro.Controls;
+using Renci.SshNet;
+using Renci.SshNet.Common;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -13,117 +17,67 @@ namespace Test
 {
     public partial class MainWindow : MetroWindow
     {
+        private TerminalBuffer Buffer { get; set; }
+        private ExecutionProfile Profile { get; set; }
+        private TerminalSize Size { get; } = new TerminalSize(80, 24);
+
         public MainWindow()
         {
             InitializeComponent();
 
-            var size = new TerminalSize(80, 24);
-
-            var profile = ExecutionProfile.CreateDefaultShell().ExpandVariables();
-            // var profile = new ExecutionProfile()
-            // {
-            //     Arguments = new[] {"-Sy"}, Command = @"c:\SN\tools\msys\usr\bin\pacman.exe",
-            //     CurrentWorkingDirectory = @"c:\SN\tools\msys\usr\bin"
-            // };
-            var b = new TerminalBuffer(size);
+            Profile = ExecutionProfile.CreateDefaultShell().ExpandVariables();
+            Buffer = new TerminalBuffer(Size);
 
             terminalControl.AutoSizeTerminal = true;
 
-            // terminalControl.Session = new TerminalSession(b, profile);
-            // terminalControl.Session = new TerminalSession(size, new ExecutionProfile()
-            // {
-            //     Arguments = new []{ "-h" }, Command = @"c:\SN\tools\msys\usr\bin\pacman.exe", CurrentWorkingDirectory = @"c:\SN\tools\msys\usr\bin"
-            // });
+            //CreateSshSession();
+            CreateWinSession();
+        }
 
-            // var client = new TcpClient();
-            // client.Connect(IPAddress.Parse("192.168.1.15"), 5001 );
-            // var stream = client.GetStream();
-            // terminalControl.Session = new TerminalSession(size, stream, stream);
-            // terminalControl.Session.ImplicitCrForLf = true;
-            // terminalControl.Session.Connect();
+        private void CreateTcpSession()
+        {
+            TcpClient client = new TcpClient();
+            client.Connect(new IPEndPoint(
+                new IPAddress(new byte[] { 192, 168, 178, 84 }), 22));
+            Stream stream = client.GetStream();
+            terminalControl.Session = new TerminalSession(Buffer, stream, stream);
+            terminalControl.Session.ImplicitCrForLf = false;
+            terminalControl.Session.Connect();
+        }
 
-            int x = 5;
-
-            void OnSessionOnFinished(object sender, EventArgs args)
+        private void CreateSshSession()
+        {
+            AuthenticationMethod[] methods = new AuthenticationMethod[]
             {
-                if (terminalControl.Session != null)
-                {
-                    terminalControl.Session.Finished -= OnSessionOnFinished;
-                    terminalControl.Session.Dispose();
-                }
-
-                if (x-- > 0)
-                    CreatePermaSession();
-            }
-
-            void CreatePermaSession()
-            {
-                terminalControl.Session = new TerminalSessionCmd(b, profile);
-                terminalControl.Session.Finished += OnSessionOnFinished;
-                terminalControl.Session.Connect();
-            }
-
-            CreatePermaSession();
-            bool allowSlider = true;
-
-            terminalControl.Buffer.ViewportChanged += (sender, args) =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    var buffer = terminalControl.Buffer;
-                    if (allowSlider)
-                    {
-                        allowSlider = false;
-
-                        /*Slider.Minimum = -terminalControl.Buffer.CursorY;
-                        Slider.Maximum = buffer.HistoryLength;
-                        var value = -buffer.WindowTop;
-                        if (value < Slider.Minimum) value = (int)Slider.Minimum;
-                        if (value > Slider.Maximum) value = (int)Slider.Maximum;
-                        Slider.Value = value;*/
-
-                        allowSlider = true;
-                    }
-
-
-                    /*Debug.Text = buffer.WindowTop.ToString();
-                    Debug1.Text = Slider.Minimum.ToString();
-                    Debug2.Text = Slider.Maximum.ToString();*/
-                });
+                new PasswordAuthenticationMethod("root", "pwd")
             };
+            var info = new ConnectionInfo("192.168.178.84", "root", methods);
+            SshClient client = new SshClient(info);
+            client.Connect();
+            var terminalMode = new Dictionary<TerminalModes, uint>();
+            terminalMode.Add(TerminalModes.VEOL, 1);
+            var stream = client.CreateShellStream("vt102", 80, 32, 0, 0, 16, terminalMode);
 
-            /*Button1.Click += (sender, args) => { terminalControl.Scroll(1); };
+            terminalControl.Session = new TerminalSession(Buffer, stream, stream);
+            terminalControl.Session.ImplicitCrForLf = true;
+            terminalControl.Session.Connect();
+        }
 
-            Button2.Click += (sender, args) => { terminalControl.Scroll(-1); };
-
-            Slider.ValueChanged += (sender, args) =>
+        private void OnSessionOnFinished(object sender, EventArgs args)
+        {
+            if (terminalControl.Session != null)
             {
-                if (allowSlider)
-                {
-                    allowSlider = false;
-                    terminalControl.ScrollTo(-(int)args.NewValue);
-                    allowSlider = true;
-                }
-            };
+                terminalControl.Session.Finished -= OnSessionOnFinished;
+                terminalControl.Session.Dispose();
+            }
+            CreateWinSession();
+        }
 
-
-            var t = new Timer(100);
-            t.Start();
-            t.Elapsed += (sender, args) =>
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    // Slider.Maximum = terminalControl.Session.Buffer.Size.Rows + terminalControl.Buffer.HistoryLength;
-                    // var value = terminalControl.Buffer.HistoryLength + terminalControl.Buffer.WindowTop;
-                    // if (value < 0) value = 0;
-                    // if (value > Slider.Maximum) value = (int) Slider.Maximum;
-                    // Slider.Value = value;
-
-
-                    // Debug1.Text = Slider.Maximum.ToString();
-                    // Debug2.Text = terminalControl.Buffer.WindowTop.ToString();
-                });
-            };*/
+        private void CreateWinSession()
+        {
+            terminalControl.Session = new TerminalSessionWin(Buffer, Profile);
+            terminalControl.Session.Finished += OnSessionOnFinished;
+            terminalControl.Session.Connect();
         }
 
         private void TerminalControl_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)

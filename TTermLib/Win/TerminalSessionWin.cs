@@ -6,9 +6,9 @@ using TTerm.Terminal;
 
 namespace TTermLibCmd
 {
-    public class TerminalSessionCmd : TerminalSession
+    public class TerminalSessionWin : TerminalSession
     {
-        public TerminalSessionCmd(TerminalBuffer buffer, ExecutionProfile executionProfile) 
+        public TerminalSessionWin(TerminalBuffer buffer, ExecutionProfile executionProfile) 
             : base(buffer, new WinPty(executionProfile, buffer.Size))
         {
 

@@ -96,7 +96,7 @@
     <Compile Include="Win\EnvironmentVariables.cs" />
     <Compile Include="Win\ExecutionProfile.cs" />
     <Compile Include="Win\Native\Win32.cs" />
-    <Compile Include="Win\TerminalSessionCmd.cs" />
+    <Compile Include="Win\TerminalSessionWin.cs" />
     <Compile Include="Win\UserUtility.cs" />
     <Compile Include="Win\WinPty.cs" />
   </ItemGroup>

@@ -7,6 +7,7 @@ using System.Windows;
 using TTerm.Ansi;
 using TTerm.Utility;
 using TTermLib.Terminal;
+using System.Linq;
 
 namespace TTerm.Terminal
 {
@@ -104,7 +105,8 @@ namespace TTerm.Terminal
                     if (readChars > 0)
                     {
                         var reader = new ArrayReader<char>(buffer, 0, readChars);
-                        var codes = ansiParser.Parse(reader);
+                        var debug = string.Join("", buffer);
+                        var codes = ansiParser.Parse(reader).ToList();
                         ReceiveOutput(codes);
                     }
                 } while (!sr.EndOfStream);
